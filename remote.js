@@ -4,48 +4,69 @@
  * the desktop popcorn-time app running
  */
 
-try {
+ try {
 
-	var os=require('os');
-	var localname = os.hostname();
-	console.log("local machine name: " +localname);
+ 	var os = require('os');
+ 	var localname = os.hostname();
+ 	console.log("local machine name: " +localname);
 
-	var ifaces=os.networkInterfaces();
+ 	var ifaces = os.networkInterfaces();
 	// local IP's logs
 	for (var dev in ifaces) {
-  	var alias=0;
-  	ifaces[dev].forEach(function(details){
-    	if(details.family=='IPv4') {
+		var alias = 0;
+		ifaces[dev].forEach(function(details){
+			if(details.family === 'IPv4') {
 				if(dev.match(/^en/)) {
 					intra = details.address;
 				}
-  	  }
-	  });
+			}
+		});
 	}
 	var rcapp  = require('express')();
 	var rchttp = require('http').Server(rcapp);
 	
 	rcapp.get('', function(req, res){
 		res.writeHead(200, { 'Content-Type': 'text/html' });
-	  res.end("It's popcorn time remote control");
+		res.end("It's popcorn time remote control");
 	});
 	
 	rcapp.get('/', function(req, res){
 		res.writeHead(200, { 'Content-Type': 'text/html' });
-	  res.end("It's popcorn time remote control");
+		res.end("It's popcorn time remote control");
 	});
 
 	var io = require('socket.io')(rchttp);
 	io.on('connection', function(socket){
 		
-		socket.emit("jalou", {name:localname});
+		socket.emit("jalou", { name : localname });
 
 		socket.on("play", function(){
-			try { videojs("video_player").play(); }catch(e) { socket.emit("play error", {e:e}); }
+			try { 
+				videojs("video_player").play(); 
+			}
+			catch(e) { 
+				socket.emit("play error", { e : e }); 
+			}
 		});
 
 		socket.on("pause", function(){
-			try { videojs("video_player").pause(); }catch(e) { socket.emit("pause error", {e:e}); }
+			try { 
+				videojs("video_player").pause(); 
+			}
+			catch(e) { 
+				socket.emit("pause error", { e : e }); 
+			}
+		});
+
+		socket.on("keypress", function(key){
+			try { 
+				var e = jQuery.Event("keydown");
+				e.which = e.keyCode = parseInt(key, 10);
+				$("body").trigger(e);
+			}
+			catch(e) { 
+				socket.emit("keypress error", { e : e }); 
+			}
 		});
 	});
 	
